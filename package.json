@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "storeroom": "git://github.com/jcoglan/storeroom.git#master",
+    "vaultdb": "git://github.com/vault-db/core.git#main"
+  },
+  "devDependencies": {
+    "mocha": "^10.7.3"
+  },
+  "scripts": {
+    "test": "mocha --recursive"
+  }
+}
