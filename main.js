@@ -3,6 +3,8 @@
 const { parseArgs } = require('util')
 const storeroom = require('./lib/storeroom')
 const vaultdb = require('./lib/vaultdb')
+
+const Counter = require('./lib/counter')
 const stats = require('./lib/stats')
 
 const JsonFileStore = require('./lib/impls/json_file_store')
@@ -54,7 +56,8 @@ const UPDATE_LIMIT = 1e5
 
 async function runTest (subject) {
   let adapter = await subject.createAdapter()
-  let store = await subject.createStore(adapter)
+  let counter = new Counter(adapter)
+  let store = await subject.createStore(counter)
   let updates = []
 
   // single read to force store to complete initialisation
@@ -76,15 +79,18 @@ async function runTest (subject) {
   let b = process.hrtime.bigint()
 
   return {
+    metrics: counter.metrics,
     time: Number((b - a) / 1000000n)
   }
 }
 
 async function benchmark (subject) {
+  let metrics = []
   let times = []
 
   for (let i = 0; i < config.runs; i++) {
     let result = await runTest(subject)
+    metrics.push(result.metrics)
     times.push(result.time)
   }
 
@@ -94,7 +100,10 @@ async function benchmark (subject) {
 
   let printTime = Math.round(mean) + 'ms ± ' + Math.round(err) + '%'
 
-  console.log(subject.name, '|', printTime)
+  let { name } = subject
+  while (name.length < 20) name += ' '
+
+  console.log(name, '|', printTime, '|', metrics[0])
 }
 
 async function main () {
