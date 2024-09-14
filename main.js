@@ -33,69 +33,6 @@ for (let key of ['docs', 'shards', 'runs']) {
   config[key] = parseInt(config[key], 10)
 }
 
-const STORE_PATH = resolve(__dirname, 'tmp')
-const password = 'hello'
-
-function createStoreroomAdapter () {
-  if (config.file) {
-    return storeroom.createFileAdapter(STORE_PATH)
-  } else {
-    return new storeroom.MemoryAdapter()
-  }
-}
-
-function createVaultAdapter () {
-  if (config.file) {
-    return new vaultdb.FileAdapter(STORE_PATH, { fsync: config.fsync })
-  } else {
-    return new vaultdb.MemoryAdapter()
-  }
-}
-
-const SUBJECTS = [
-  {
-    name: 'json file',
-    createAdapter: createStoreroomAdapter,
-    createStore (adapter) {
-      return new JsonFileStore(adapter)
-    }
-  },
-  {
-    name: 'json list',
-    createAdapter: createStoreroomAdapter,
-    createStore (adapter) {
-      return new JsonListStore(adapter)
-    }
-  },
-  {
-    name: 'sharded json',
-    createAdapter: createStoreroomAdapter,
-    createStore (adapter) {
-      return new ShardedListStore(adapter, { shards: config.shards })
-    }
-  },
-  {
-    name: 'storeroom',
-    createAdapter: createStoreroomAdapter,
-    createStore (adapter) {
-      let hashBits = Math.ceil(Math.log(config.shards) / Math.log(2))
-      return storeroom.createStore({ adapter, password, hashBits })
-    }
-  },
-  {
-    name: 'vaultdb',
-    createAdapter: createVaultAdapter,
-    async createStore (adapter) {
-      let store = await vaultdb.createStore(adapter, {
-        key: { password, iterations: 2 ** 13 },
-        shards: { n: config.shards }
-      })
-      if (config.task) store = store.task()
-      return store
-    }
-  }
-]
-
 const UPDATE_LIMIT = 1e5
 
 async function runTest (subject) {
@@ -155,10 +92,71 @@ async function benchmark (subject) {
   console.log(rpad(subject.name, 16), rpad(printTime, 20), metrics[0])
 }
 
-async function main () {
-  for (let subject of SUBJECTS) {
+async function main (subjects) {
+  for (let subject of subjects) {
     await benchmark(subject)
   }
 }
 
-main()
+const STORE_PATH = resolve(__dirname, 'tmp')
+const password = 'hello'
+
+function createStoreroomAdapter () {
+  if (config.file) {
+    return storeroom.createFileAdapter(STORE_PATH)
+  } else {
+    return new storeroom.MemoryAdapter()
+  }
+}
+
+function createVaultAdapter () {
+  if (config.file) {
+    return new vaultdb.FileAdapter(STORE_PATH, { fsync: config.fsync })
+  } else {
+    return new vaultdb.MemoryAdapter()
+  }
+}
+
+main([
+  {
+    name: 'json file',
+    createAdapter: createStoreroomAdapter,
+    createStore (adapter) {
+      return new JsonFileStore(adapter)
+    }
+  },
+  {
+    name: 'json list',
+    createAdapter: createStoreroomAdapter,
+    createStore (adapter) {
+      return new JsonListStore(adapter)
+    }
+  },
+  {
+    name: 'sharded json',
+    createAdapter: createStoreroomAdapter,
+    createStore (adapter) {
+      return new ShardedListStore(adapter, { shards: config.shards })
+    }
+  },
+  {
+    name: 'storeroom',
+    createAdapter: createStoreroomAdapter,
+    createStore (adapter) {
+      let hashBits = Math.ceil(Math.log(config.shards) / Math.log(2))
+      return storeroom.createStore({ adapter, password, hashBits })
+    }
+  },
+  {
+    name: 'vaultdb',
+    createAdapter: createVaultAdapter,
+    async createStore (adapter) {
+      let store = await vaultdb.createStore(adapter, {
+        key: { password, iterations: 2 ** 13 },
+        shards: { n: config.shards }
+      })
+      if (config.task) store = store.task()
+      return store
+    }
+  }
+])
