@@ -19,6 +19,7 @@ let { values: config } = parseArgs({
     task:   { type: 'boolean', default: true },
     seq:    { type: 'boolean', default: false },
     file:   { type: 'boolean', default: false },
+    fsync:  { type: 'boolean', default: true },
     docs:   { type: 'string', default: '1000' },
     shards: { type: 'string', default: '4' },
     runs:   { type: 'string', default: '10' }
@@ -44,7 +45,7 @@ function createStoreroomAdapter () {
 
 function createVaultAdapter () {
   if (config.file) {
-    return new vaultdb.FileAdapter(STORE_PATH)
+    return new vaultdb.FileAdapter(STORE_PATH, { fsync: config.fsync })
   } else {
     return new vaultdb.MemoryAdapter()
   }
