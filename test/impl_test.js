@@ -5,6 +5,7 @@ const assert = require('assert').strict
 const { MemoryAdapter } = require('../lib/storeroom')
 const JsonFileStore = require('../lib/impls/json_file_store')
 const JsonListStore = require('../lib/impls/json_list_store')
+const ShardedListStore = require('../lib/impls/sharded_list_store')
 
 function testStore (impl) {
   let store
@@ -50,12 +51,12 @@ function testStore (impl) {
 }
 
 function testStores (stores) {
-  for (let [name, Store] of Object.entries(stores)) {
+  for (let [name, [Store, options]] of Object.entries(stores)) {
     describe(name, () => {
       testStore({
         createStore () {
           let adapter = new MemoryAdapter()
-          return new Store(adapter)
+          return new Store(adapter, options)
         }
       })
     })
@@ -63,6 +64,7 @@ function testStores (stores) {
 }
 
 testStores({
-  JsonFileStore,
-  JsonListStore
+  JsonFileStore: [JsonFileStore],
+  JsonListStore: [JsonListStore],
+  ShardedListStore: [ShardedListStore, { shards: 4 }]
 })
