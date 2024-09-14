@@ -2,7 +2,9 @@
 
 const assert = require('assert').strict
 
-const { MemoryAdapter } = require('../lib/storeroom')
+const storeroom = require('../lib/storeroom')
+const vaultdb = require('../lib/vaultdb')
+
 const JsonFileStore = require('../lib/impls/json_file_store')
 const JsonListStore = require('../lib/impls/json_list_store')
 const ShardedListStore = require('../lib/impls/sharded_list_store')
@@ -10,8 +12,8 @@ const ShardedListStore = require('../lib/impls/sharded_list_store')
 function testStore (impl) {
   let store
 
-  beforeEach(() => {
-    store = impl.createStore()
+  beforeEach(async () => {
+    store = await impl.createStore()
   })
 
   it('returns null for a missing doc', async () => {
@@ -51,20 +53,37 @@ function testStore (impl) {
 }
 
 function testStores (stores) {
-  for (let [name, [Store, options]] of Object.entries(stores)) {
+  for (let [name, createStore] of Object.entries(stores)) {
     describe(name, () => {
-      testStore({
-        createStore () {
-          let adapter = new MemoryAdapter()
-          return new Store(adapter, options)
-        }
-      })
+      testStore({ createStore })
     })
   }
 }
 
+const password = 'hello'
+
 testStores({
-  JsonFileStore: [JsonFileStore],
-  JsonListStore: [JsonListStore],
-  ShardedListStore: [ShardedListStore, { shards: 4 }]
+  JsonFileStore () {
+    let adapter = new storeroom.MemoryAdapter()
+    return new JsonFileStore(adapter)
+  },
+  JsonListStore () {
+    let adapter = new storeroom.MemoryAdapter()
+    return new JsonListStore(adapter)
+  },
+  ShardedListStore () {
+    let adapter = new storeroom.MemoryAdapter()
+    return new ShardedListStore(adapter, { shards: 4 })
+  },
+  Storeroom () {
+    let adapter = new storeroom.MemoryAdapter()
+    return storeroom.createStore({ adapter, password, hashBits: 2 })
+  },
+  VaultDB () {
+    let adapter = new vaultdb.MemoryAdapter()
+    return vaultdb.createStore(adapter, {
+      key: { password, iterations: 2 ** 13 },
+      shards: { n: 4 }
+    })
+  }
 })

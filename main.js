@@ -13,10 +13,13 @@ const ShardedListStore = require('./lib/impls/sharded_list_store')
 
 let { values: config } = parseArgs({
   options: {
+    task:   { type: 'boolean', default: true },
+    seq:    { type: 'boolean', default: false },
     docs:   { type: 'string', default: '1000' },
     shards: { type: 'string', default: '4' },
     runs:   { type: 'string', default: '10' }
   },
+  allowNegative: true,
   strict: true
 })
 
@@ -24,8 +27,14 @@ for (let key of ['docs', 'shards', 'runs']) {
   config[key] = parseInt(config[key], 10)
 }
 
+const password = 'hello'
+
 function createStoreroomAdapter () {
   return new storeroom.MemoryAdapter()
+}
+
+function createVaultAdapter () {
+  return new vaultdb.MemoryAdapter()
 }
 
 const SUBJECTS = [
@@ -49,6 +58,26 @@ const SUBJECTS = [
     createStore (adapter) {
       return new ShardedListStore(adapter, { shards: config.shards })
     }
+  },
+  {
+    name: 'Storeroom',
+    createAdapter: createStoreroomAdapter,
+    createStore (adapter) {
+      let hashBits = Math.ceil(Math.log(config.shards) / Math.log(2))
+      return storeroom.createStore({ adapter, password, hashBits })
+    }
+  },
+  {
+    name: 'VaultDB',
+    createAdapter: createVaultAdapter,
+    async createStore (adapter) {
+      let store = await vaultdb.createStore(adapter, {
+        key: { password, iterations: 2 ** 13 },
+        shards: { n: config.shards }
+      })
+      if (config.task) store = store.task()
+      return store
+    }
   }
 ]
 
@@ -67,7 +96,12 @@ async function runTest (subject) {
 
   for (let i = 1; i <= config.docs; i++) {
     let put = store.update('/path/to/doc-' + i, () => ({ n: i }))
-    updates.push(put)
+
+    if (config.seq) {
+      await put
+    } else {
+      updates.push(put)
+    }
 
     if (updates.length >= UPDATE_LIMIT) {
       await Promise.all(updates)
