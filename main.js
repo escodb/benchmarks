@@ -39,28 +39,28 @@ function createVaultAdapter () {
 
 const SUBJECTS = [
   {
-    name: 'JSON file',
+    name: 'json file',
     createAdapter: createStoreroomAdapter,
     createStore (adapter) {
       return new JsonFileStore(adapter)
     }
   },
   {
-    name: 'JSON list',
+    name: 'json list',
     createAdapter: createStoreroomAdapter,
     createStore (adapter) {
       return new JsonListStore(adapter)
     }
   },
   {
-    name: 'Sharded JSON list',
+    name: 'sharded json',
     createAdapter: createStoreroomAdapter,
     createStore (adapter) {
       return new ShardedListStore(adapter, { shards: config.shards })
     }
   },
   {
-    name: 'Storeroom',
+    name: 'storeroom',
     createAdapter: createStoreroomAdapter,
     createStore (adapter) {
       let hashBits = Math.ceil(Math.log(config.shards) / Math.log(2))
@@ -68,7 +68,7 @@ const SUBJECTS = [
     }
   },
   {
-    name: 'VaultDB',
+    name: 'vaultdb',
     createAdapter: createVaultAdapter,
     async createStore (adapter) {
       let store = await vaultdb.createStore(adapter, {
@@ -132,12 +132,31 @@ async function benchmark (subject) {
   let stddev = stats.stddev(times)
   let err = 100 * stddev / mean
 
-  let printTime = Math.round(mean) + 'ms ± ' + Math.round(err) + '%'
+  let printTime = lpad(fmt(Math.round(mean)), 8) + ' ms ' +
+                  '± ' + Math.round(err) + '%'
 
-  let { name } = subject
-  while (name.length < 20) name += ' '
+  console.log(rpad(subject.name, 16), rpad(printTime, 20), metrics[0])
+}
 
-  console.log(name, '|', printTime, '|', metrics[0])
+function fmt (n) {
+  let chars = [...n.toString()].reverse()
+  let output = []
+
+  for (let i = 0; i < chars.length; i++) {
+    if (i > 0 && i % 3 === 0) output.push(',')
+    output.push(chars[i])
+  }
+  return output.reverse().join('')
+}
+
+function lpad (str, len) {
+  while (str.length < len) str = ' ' + str
+  return str
+}
+
+function rpad (str, len) {
+  while (str.length < len) str = str + ' '
+  return str
 }
 
 async function main () {
