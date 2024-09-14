@@ -1,20 +1,24 @@
 'use strict'
 
 const { parseArgs } = require('util')
+const { resolve} = require('path')
+const fs = require('fs').promises
+
 const storeroom = require('./lib/storeroom')
 const vaultdb = require('./lib/vaultdb')
-
-const Counter = require('./lib/counter')
-const stats = require('./lib/stats')
 
 const JsonFileStore = require('./lib/impls/json_file_store')
 const JsonListStore = require('./lib/impls/json_list_store')
 const ShardedListStore = require('./lib/impls/sharded_list_store')
 
+const Counter = require('./lib/counter')
+const stats = require('./lib/stats')
+
 let { values: config } = parseArgs({
   options: {
     task:   { type: 'boolean', default: true },
     seq:    { type: 'boolean', default: false },
+    file:   { type: 'boolean', default: false },
     docs:   { type: 'string', default: '1000' },
     shards: { type: 'string', default: '4' },
     runs:   { type: 'string', default: '10' }
@@ -27,14 +31,23 @@ for (let key of ['docs', 'shards', 'runs']) {
   config[key] = parseInt(config[key], 10)
 }
 
+const STORE_PATH = resolve(__dirname, 'tmp')
 const password = 'hello'
 
 function createStoreroomAdapter () {
-  return new storeroom.MemoryAdapter()
+  if (config.file) {
+    return storeroom.createFileAdapter(STORE_PATH)
+  } else {
+    return new storeroom.MemoryAdapter()
+  }
 }
 
 function createVaultAdapter () {
-  return new vaultdb.MemoryAdapter()
+  if (config.file) {
+    return new vaultdb.FileAdapter(STORE_PATH)
+  } else {
+    return new vaultdb.MemoryAdapter()
+  }
 }
 
 const SUBJECTS = [
@@ -84,6 +97,8 @@ const SUBJECTS = [
 const UPDATE_LIMIT = 1e5
 
 async function runTest (subject) {
+  await fs.rm(STORE_PATH, { recursive: true }).catch(e => e)
+
   let adapter = await subject.createAdapter()
   let counter = new Counter(adapter)
   let store = await subject.createStore(counter)
