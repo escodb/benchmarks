@@ -13,6 +13,7 @@ const ShardedListStore = require('./lib/impls/sharded_list_store')
 
 const Counter = require('./lib/counter')
 const stats = require('./lib/stats')
+const { fmt, lpad, rpad } = require('./lib/format')
 
 let { values: config } = parseArgs({
   options: {
@@ -152,27 +153,6 @@ async function benchmark (subject) {
                   '± ' + Math.round(err) + '%'
 
   console.log(rpad(subject.name, 16), rpad(printTime, 20), metrics[0])
-}
-
-function fmt (n) {
-  let chars = [...n.toString()].reverse()
-  let output = []
-
-  for (let i = 0; i < chars.length; i++) {
-    if (i > 0 && i % 3 === 0) output.push(',')
-    output.push(chars[i])
-  }
-  return output.reverse().join('')
-}
-
-function lpad (str, len) {
-  while (str.length < len) str = ' ' + str
-  return str
-}
-
-function rpad (str, len) {
-  while (str.length < len) str = str + ' '
-  return str
 }
 
 async function main () {
