@@ -1,6 +1,7 @@
 'use strict'
 
 const { parseArgs } = require('util')
+const { randomBytes } = require('crypto')
 const { resolve} = require('path')
 const fs = require('fs').promises
 
@@ -33,6 +34,24 @@ for (let key of ['docs', 'shards', 'runs']) {
   config[key] = parseInt(config[key], 10)
 }
 
+
+function generatePaths (n, { width, depth }) {
+  let keys = new Array(width).fill(null).map(() => randomBytes(4).toString('hex'))
+  let paths = []
+
+  while (paths.length < n) {
+    let path = ''
+    let d = 1 + Math.floor(Math.random() * depth)
+    for (let i = 0; i < d; i++) {
+      let k = Math.floor(Math.random() * keys.length)
+      path += '/' + keys[k]
+    }
+    paths.push(path)
+  }
+  return paths
+}
+
+const PATHS = generatePaths(config.docs, { width: 100, depth: 3 })
 const UPDATE_LIMIT = 1e5
 
 async function runTest (subject) {
@@ -48,8 +67,8 @@ async function runTest (subject) {
 
   let a = process.hrtime.bigint()
 
-  for (let i = 1; i <= config.docs; i++) {
-    let put = store.update('/path/to/doc-' + i, () => ({ n: i }))
+  for (let [i, path] of PATHS.entries()) {
+    let put = store.update(path + '-' + (i + 1), () => ({ n: i + 1 }))
 
     if (config.seq) {
       await put
