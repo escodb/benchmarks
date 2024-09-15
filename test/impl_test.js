@@ -8,6 +8,7 @@ const vaultdb = require('../lib/vaultdb')
 const JsonFileStore = require('../lib/impls/json_file_store')
 const JsonListStore = require('../lib/impls/json_list_store')
 const ShardedListStore = require('../lib/impls/sharded_list_store')
+const DocPerFileStore = require('../lib/impls/doc_per_file_store')
 
 function testStore (impl) {
   let store
@@ -74,6 +75,10 @@ testStores({
   ShardedListStore () {
     let adapter = new storeroom.MemoryAdapter()
     return new ShardedListStore(adapter, { shards: 4 })
+  },
+  DocPerFileStore () {
+    let adapter = new storeroom.MemoryAdapter()
+    return new DocPerFileStore(adapter)
   },
   Storeroom () {
     let adapter = new storeroom.MemoryAdapter()

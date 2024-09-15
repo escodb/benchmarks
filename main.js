@@ -11,6 +11,7 @@ const vaultdb = require('./lib/vaultdb')
 const JsonFileStore = require('./lib/impls/json_file_store')
 const JsonListStore = require('./lib/impls/json_list_store')
 const ShardedListStore = require('./lib/impls/sharded_list_store')
+const DocPerFileStore = require('./lib/impls/doc_per_file_store')
 
 const Counter = require('./lib/counter')
 const stats = require('./lib/stats')
@@ -156,6 +157,13 @@ main([
     createAdapter: createStoreroomAdapter,
     createStore (adapter) {
       return new ShardedListStore(adapter, { shards: config.shards })
+    }
+  },
+  {
+    name: 'doc per file',
+    createAdapter: createStoreroomAdapter,
+    createStore (adapter) {
+      return new DocPerFileStore(adapter)
     }
   },
   {
