@@ -106,10 +106,10 @@ async function benchmark (subject) {
   let stddev = stats.stddev(times)
   let err = 100 * stddev / mean
 
-  let printTime = lpad(fmt(Math.round(mean)), 8) + ' ms ' +
+  let printTime = lpad(fmt(Math.round(mean)), 12) + ' ms ' +
                   '± ' + Math.round(err) + '%'
 
-  console.log(rpad(subject.name, 16), rpad(printTime, 20), metrics[0])
+  console.log(rpad(subject.name, 16), rpad(printTime, 24), metrics[0])
 }
 
 async function main (subjects) {
