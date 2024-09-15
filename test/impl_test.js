@@ -65,23 +65,23 @@ const password = 'hello'
 
 testStores({
   JsonFileStore () {
-    let adapter = new storeroom.MemoryAdapter()
+    let adapter = new storeroom.Converter(new vaultdb.MemoryAdapter())
     return new JsonFileStore(adapter)
   },
   JsonListStore () {
-    let adapter = new storeroom.MemoryAdapter()
+    let adapter = new storeroom.Converter(new vaultdb.MemoryAdapter())
     return new JsonListStore(adapter)
   },
   ShardedListStore () {
-    let adapter = new storeroom.MemoryAdapter()
+    let adapter = new storeroom.Converter(new vaultdb.MemoryAdapter())
     return new ShardedListStore(adapter, { shards: 4 })
   },
   DocPerFileStore () {
-    let adapter = new storeroom.MemoryAdapter()
+    let adapter = new storeroom.Converter(new vaultdb.MemoryAdapter())
     return new DocPerFileStore(adapter)
   },
   Storeroom () {
-    let adapter = new storeroom.MemoryAdapter()
+    let adapter = new storeroom.Converter(new vaultdb.MemoryAdapter())
     return storeroom.createStore({ adapter, password, hashBits: 2 })
   },
   VaultDB () {

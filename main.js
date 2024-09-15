@@ -19,13 +19,14 @@ const { fmt, lpad, rpad } = require('./lib/format')
 
 let { values: config } = parseArgs({
   options: {
-    task:   { type: 'boolean', default: true },
-    seq:    { type: 'boolean', default: false },
-    file:   { type: 'boolean', default: false },
-    fsync:  { type: 'boolean', default: true },
-    docs:   { type: 'string', default: '1000' },
-    shards: { type: 'string', default: '4' },
-    runs:   { type: 'string', default: '10' }
+    task:    { type: 'boolean', default: true },
+    seq:     { type: 'boolean', default: false },
+    backend: { type: 'string', default: '' },
+    file:    { type: 'boolean', default: false },
+    fsync:   { type: 'boolean', default: true },
+    docs:    { type: 'string', default: '1000' },
+    shards:  { type: 'string', default: '4' },
+    runs:    { type: 'string', default: '10' }
   },
   allowNegative: true,
   strict: true
@@ -34,7 +35,6 @@ let { values: config } = parseArgs({
 for (let key of ['docs', 'shards', 'runs']) {
   config[key] = parseInt(config[key], 10)
 }
-
 
 function generatePaths (n, { width, depth }) {
   let keys = new Array(width).fill(null).map(() => randomBytes(4).toString('hex'))
@@ -122,15 +122,19 @@ const STORE_PATH = resolve(__dirname, 'tmp')
 const password = 'hello'
 
 function createStoreroomAdapter () {
-  if (config.file) {
+  if (config.backend === 'vaultdb') {
+    return new storeroom.Converter(createVaultAdapter())
+  } else if (config.file) {
     return storeroom.createFileAdapter(STORE_PATH)
   } else {
-    return new storeroom.MemoryAdapter()
+    return new storeroom.Converter(new vaultdb.MemoryAdapter())
   }
 }
 
 function createVaultAdapter () {
-  if (config.file) {
+  if (config.backend === 'storeroom') {
+    return new vaultdb.Converter(createStoreroomAdapter())
+  } else if (config.file) {
     return new vaultdb.FileAdapter(STORE_PATH, { fsync: config.fsync })
   } else {
     return new vaultdb.MemoryAdapter()
