@@ -23,6 +23,7 @@ let { values: config } = parseArgs({
     seq:     { type: 'boolean', default: false },
     backend: { type: 'string', default: '' },
     file:    { type: 'boolean', default: false },
+    couchdb: { type: 'boolean', default: false },
     fsync:   { type: 'boolean', default: true },
     docs:    { type: 'string', default: '1000' },
     shards:  { type: 'string', default: '4' },
@@ -56,7 +57,8 @@ const PATHS = generatePaths(config.docs, { width: 100, depth: 3 })
 const UPDATE_LIMIT = 1e5
 
 async function runTest (subject) {
-  await fs.rm(STORE_PATH, { recursive: true }).catch(e => e)
+  if (config.file) await fs.rm(STORE_PATH, { recursive: true }).catch(e => e)
+  if (config.couchdb) await vaultdb.CouchAdapter.cleanup()
 
   let adapter = await subject.createAdapter()
   let counter = new Counter(adapter)
@@ -126,6 +128,8 @@ function createStoreroomAdapter () {
     return new storeroom.Converter(createVaultAdapter())
   } else if (config.file) {
     return storeroom.createFileAdapter(STORE_PATH)
+  } else if (config.couchdb) {
+    return new storeroom.Converter(new vaultdb.CouchAdapter())
   } else {
     return new storeroom.Converter(new vaultdb.MemoryAdapter())
   }
@@ -136,6 +140,8 @@ function createVaultAdapter () {
     return new vaultdb.Converter(createStoreroomAdapter())
   } else if (config.file) {
     return new vaultdb.FileAdapter(STORE_PATH, { fsync: config.fsync })
+  } else if (config.couchdb) {
+    return new vaultdb.CouchAdapter()
   } else {
     return new vaultdb.MemoryAdapter()
   }
