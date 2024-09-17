@@ -8,10 +8,10 @@ const fs = require('fs').promises
 const storeroom = require('./lib/storeroom')
 const vaultdb = require('./lib/vaultdb')
 
-const JsonFileStore = require('./lib/impls/json_file_store')
-const JsonListStore = require('./lib/impls/json_list_store')
-const ShardedListStore = require('./lib/impls/sharded_list_store')
 const DocPerFileStore = require('./lib/impls/doc_per_file_store')
+const JsonFileStore = require('./lib/impls/json_file_store')
+const SSTableStore = require('./lib/impls/sstable_store')
+const ShardedTableStore = require('./lib/impls/sharded_table_store')
 
 const Counter = require('./lib/counter')
 const stats = require('./lib/stats')
@@ -156,17 +156,17 @@ main([
     }
   },
   {
-    name: 'json list',
+    name: 'sstable',
     createAdapter: createStoreroomAdapter,
     createStore (adapter) {
-      return new JsonListStore(adapter)
+      return new SSTableStore(adapter)
     }
   },
   {
-    name: 'sharded json',
+    name: 'sharded tables',
     createAdapter: createStoreroomAdapter,
     createStore (adapter) {
-      return new ShardedListStore(adapter, { shards: config.shards })
+      return new ShardedTableStore(adapter, { shards: config.shards })
     }
   },
   {

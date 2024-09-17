@@ -5,10 +5,10 @@ const assert = require('assert').strict
 const storeroom = require('../lib/storeroom')
 const vaultdb = require('../lib/vaultdb')
 
-const JsonFileStore = require('../lib/impls/json_file_store')
-const JsonListStore = require('../lib/impls/json_list_store')
-const ShardedListStore = require('../lib/impls/sharded_list_store')
 const DocPerFileStore = require('../lib/impls/doc_per_file_store')
+const JsonFileStore = require('../lib/impls/json_file_store')
+const SSTableStore = require('../lib/impls/sstable_store')
+const ShardedTableStore = require('../lib/impls/sharded_table_store')
 
 function testStore (impl) {
   let store
@@ -68,13 +68,13 @@ testStores({
     let adapter = new storeroom.Converter(new vaultdb.MemoryAdapter())
     return new JsonFileStore(adapter)
   },
-  JsonListStore () {
+  SSTableStore () {
     let adapter = new storeroom.Converter(new vaultdb.MemoryAdapter())
-    return new JsonListStore(adapter)
+    return new SSTableStore(adapter)
   },
-  ShardedListStore () {
+  ShardedTableStore () {
     let adapter = new storeroom.Converter(new vaultdb.MemoryAdapter())
-    return new ShardedListStore(adapter, { shards: 4 })
+    return new ShardedTableStore(adapter, { shards: 4 })
   },
   DocPerFileStore () {
     let adapter = new storeroom.Converter(new vaultdb.MemoryAdapter())
