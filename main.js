@@ -10,8 +10,9 @@ const vaultdb = require('./lib/vaultdb')
 
 const DocPerFileStore = require('./lib/impls/doc_per_file_store')
 const JsonFileStore = require('./lib/impls/json_file_store')
-const SSTableStore = require('./lib/impls/sstable_store')
+const { SSTableStore } = require('./lib/impls/sstable_store')
 const ShardedTableStore = require('./lib/impls/sharded_table_store')
+const IndexedLogStore = require('./lib/impls/indexed_log_store')
 
 const Counter = require('./lib/counter')
 const stats = require('./lib/stats')
@@ -102,6 +103,8 @@ async function runTest (subject) {
   }
 
   await Promise.all(updates)
+  if (store.flush) await store.flush()
+
   let b = process.hrtime.bigint()
 
   return {
@@ -132,6 +135,7 @@ async function benchmark (subject) {
 
 async function main (subjects) {
   for (let subject of subjects) {
+    if ('only' in subject && !subject.only) continue
     await benchmark(subject)
   }
 }
@@ -190,6 +194,14 @@ main([
     createAdapter: createStoreroomAdapter,
     createStore (adapter) {
       return new DocPerFileStore(adapter)
+    }
+  },
+  {
+    name: 'indexed log',
+    only: config.file,
+    createAdapter: createStoreroomAdapter,
+    createStore (adapter) {
+      return new IndexedLogStore(resolve(__dirname, 'tmp', 'index'))
     }
   },
   {

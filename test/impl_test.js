@@ -7,7 +7,7 @@ const vaultdb = require('../lib/vaultdb')
 
 const DocPerFileStore = require('../lib/impls/doc_per_file_store')
 const JsonFileStore = require('../lib/impls/json_file_store')
-const SSTableStore = require('../lib/impls/sstable_store')
+const { SSTableStore } = require('../lib/impls/sstable_store')
 const ShardedTableStore = require('../lib/impls/sharded_table_store')
 
 function testStore (impl) {
