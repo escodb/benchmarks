@@ -26,6 +26,7 @@ let { values: config } = parseArgs({
     couchdb: { type: 'boolean', default: false },
     fsync:   { type: 'boolean', default: true },
     docs:    { type: 'string', default: '1000' },
+    size:    { type: 'string', default: '0' },
     shards:  { type: 'string', default: '4' },
     runs:    { type: 'string', default: '10' }
   },
@@ -33,7 +34,7 @@ let { values: config } = parseArgs({
   strict: true
 })
 
-for (let key of ['docs', 'shards', 'runs']) {
+for (let key of ['docs', 'size', 'shards', 'runs']) {
   config[key] = parseInt(config[key], 10)
 }
 
@@ -41,19 +42,34 @@ function generatePaths (n, { width, depth }) {
   let keys = new Array(width).fill(null).map(() => randomBytes(4).toString('hex'))
   let paths = []
 
-  while (paths.length < n) {
+  for (let i = 1; i <= n; i++) {
     let path = ''
     let d = 1 + Math.floor(Math.random() * depth)
-    for (let i = 0; i < d; i++) {
+    while (d--) {
       let k = Math.floor(Math.random() * keys.length)
       path += '/' + keys[k]
     }
-    paths.push(path)
+    paths.push(path + '-' + i)
   }
   return paths
 }
 
-const PATHS = generatePaths(config.docs, { width: 100, depth: 3 })
+function generateDocs (paths, size) {
+  return paths.map((path, i) => {
+    let doc = { n: i + 1 }
+    let len = 8
+    while (len < size) {
+      let key = 'f' + len
+      let val = randomBytes(48).toString('hex')
+      doc[key] = val
+      len += key.length + val.length + 6
+    }
+    return [path, doc]
+  })
+}
+
+const PATHS = generatePaths(config.docs, { width: 100, depth: 5 })
+const DOCS = generateDocs(PATHS, config.size)
 const UPDATE_LIMIT = 1e5
 
 async function runTest (subject) {
@@ -70,8 +86,8 @@ async function runTest (subject) {
 
   let a = process.hrtime.bigint()
 
-  for (let [i, path] of PATHS.entries()) {
-    let put = store.update(path + '-' + (i + 1), () => ({ n: i + 1 }))
+  for (let [path, doc] of DOCS) {
+    let put = store.update(path, () => doc)
 
     if (config.seq) {
       await put
