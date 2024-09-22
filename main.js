@@ -24,6 +24,7 @@ let { values: config } = parseArgs({
     seq:     { type: 'boolean', default: false },
     backend: { type: 'string', default: '' },
     file:    { type: 'boolean', default: false },
+    http:    { type: 'boolean', default: false },
     couchdb: { type: 'boolean', default: false },
     fsync:   { type: 'boolean', default: true },
     docs:    { type: 'string', default: '1000' },
@@ -73,9 +74,21 @@ const PATHS = generatePaths(config.docs, { width: 100, depth: 5 })
 const DOCS = generateDocs(PATHS, config.size)
 const UPDATE_LIMIT = 1e5
 
+function createServer () {
+  return new vaultdb.Server({
+    createAdapter: () => new vaultdb.MemoryAdapter()
+  })
+}
+
 async function runTest (subject) {
   if (config.file) await fs.rm(STORE_PATH, { recursive: true }).catch(e => e)
   if (config.couchdb) await vaultdb.CouchAdapter.cleanup()
+
+  let server = null
+  if (config.http) {
+    server = createServer()
+    await server.start()
+  }
 
   let adapter = await subject.createAdapter()
   let counter = new Counter(adapter)
@@ -106,6 +119,8 @@ async function runTest (subject) {
   if (store.flush) await store.flush()
 
   let b = process.hrtime.bigint()
+
+  if (server) await server.stop()
 
   return {
     metrics: counter.metrics,
@@ -148,6 +163,8 @@ function createStoreroomAdapter () {
     return new storeroom.Converter(createVaultAdapter())
   } else if (config.file) {
     return storeroom.createFileAdapter(STORE_PATH)
+  } else if (config.http) {
+    return new storeroom.Converter(new vaultdb.HttpAdapter('http://127.0.0.1:5000'))
   } else if (config.couchdb) {
     return new storeroom.Converter(new vaultdb.CouchAdapter())
   } else {
@@ -160,6 +177,8 @@ function createVaultAdapter () {
     return new vaultdb.Converter(createStoreroomAdapter())
   } else if (config.file) {
     return new vaultdb.FileAdapter(STORE_PATH, { fsync: config.fsync })
+  } else if (config.http) {
+    return new vaultdb.HttpAdapter('http://127.0.0.1:5000')
   } else if (config.couchdb) {
     return new vaultdb.CouchAdapter()
   } else {
@@ -191,6 +210,7 @@ main([
   },
   {
     name: 'doc per file',
+    only: !config.http,
     createAdapter: createStoreroomAdapter,
     createStore (adapter) {
       return new DocPerFileStore(adapter)
