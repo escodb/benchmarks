@@ -6,7 +6,7 @@ const { resolve} = require('path')
 const fs = require('fs').promises
 
 const storeroom = require('./lib/storeroom')
-const vaultdb = require('./lib/vaultdb')
+const escodb = require('./lib/escodb')
 
 const DocPerFileStore = require('./lib/impls/doc_per_file_store')
 const JsonFileStore = require('./lib/impls/json_file_store')
@@ -75,14 +75,14 @@ const DOCS = generateDocs(PATHS, config.size)
 const UPDATE_LIMIT = 1e5
 
 function createServer () {
-  return new vaultdb.Server({
-    createAdapter: () => new vaultdb.MemoryAdapter()
+  return new escodb.Server({
+    createAdapter: () => new escodb.MemoryAdapter()
   })
 }
 
 async function runTest (subject) {
   if (config.file) await fs.rm(STORE_PATH, { recursive: true }).catch(e => e)
-  if (config.couchdb) await vaultdb.CouchAdapter.cleanup()
+  if (config.couchdb) await escodb.CouchAdapter.cleanup()
 
   let server = null
   if (config.http) {
@@ -159,30 +159,30 @@ const STORE_PATH = resolve(__dirname, 'tmp')
 const password = 'hello'
 
 function createStoreroomAdapter () {
-  if (config.backend === 'vaultdb') {
-    return new storeroom.Converter(createVaultAdapter())
+  if (config.backend === 'escodb') {
+    return new storeroom.Converter(createEscoAdapter())
   } else if (config.file) {
     return storeroom.createFileAdapter(STORE_PATH)
   } else if (config.http) {
-    return new storeroom.Converter(new vaultdb.HttpAdapter('http://127.0.0.1:5000'))
+    return new storeroom.Converter(new escodb.HttpAdapter('http://127.0.0.1:5000'))
   } else if (config.couchdb) {
-    return new storeroom.Converter(new vaultdb.CouchAdapter())
+    return new storeroom.Converter(new escodb.CouchAdapter())
   } else {
-    return new storeroom.Converter(new vaultdb.MemoryAdapter())
+    return new storeroom.Converter(new escodb.MemoryAdapter())
   }
 }
 
-function createVaultAdapter () {
+function createEscoAdapter () {
   if (config.backend === 'storeroom') {
-    return new vaultdb.Converter(createStoreroomAdapter())
+    return new escodb.Converter(createStoreroomAdapter())
   } else if (config.file) {
-    return new vaultdb.FileAdapter(STORE_PATH, { fsync: config.fsync })
+    return new escodb.FileAdapter(STORE_PATH, { fsync: config.fsync })
   } else if (config.http) {
-    return new vaultdb.HttpAdapter('http://127.0.0.1:5000')
+    return new escodb.HttpAdapter('http://127.0.0.1:5000')
   } else if (config.couchdb) {
-    return new vaultdb.CouchAdapter()
+    return new escodb.CouchAdapter()
   } else {
-    return new vaultdb.MemoryAdapter()
+    return new escodb.MemoryAdapter()
   }
 }
 
@@ -233,10 +233,10 @@ main([
     }
   },
   {
-    name: 'vaultdb',
-    createAdapter: createVaultAdapter,
+    name: 'escodb',
+    createAdapter: createEscoAdapter,
     async createStore (adapter) {
-      let store = await vaultdb.createStore(adapter, {
+      let store = await escodb.createStore(adapter, {
         key: { password, iterations: 2 ** 13 },
         shards: { n: config.shards }
       })

@@ -3,7 +3,7 @@
 const assert = require('assert').strict
 
 const storeroom = require('../lib/storeroom')
-const vaultdb = require('../lib/vaultdb')
+const escodb = require('../lib/escodb')
 
 const DocPerFileStore = require('../lib/impls/doc_per_file_store')
 const JsonFileStore = require('../lib/impls/json_file_store')
@@ -65,28 +65,28 @@ const password = 'hello'
 
 testStores({
   JsonFileStore () {
-    let adapter = new storeroom.Converter(new vaultdb.MemoryAdapter())
+    let adapter = new storeroom.Converter(new escodb.MemoryAdapter())
     return new JsonFileStore(adapter)
   },
   SSTableStore () {
-    let adapter = new storeroom.Converter(new vaultdb.MemoryAdapter())
+    let adapter = new storeroom.Converter(new escodb.MemoryAdapter())
     return new SSTableStore(adapter)
   },
   ShardedTableStore () {
-    let adapter = new storeroom.Converter(new vaultdb.MemoryAdapter())
+    let adapter = new storeroom.Converter(new escodb.MemoryAdapter())
     return new ShardedTableStore(adapter, { shards: 4 })
   },
   DocPerFileStore () {
-    let adapter = new storeroom.Converter(new vaultdb.MemoryAdapter())
+    let adapter = new storeroom.Converter(new escodb.MemoryAdapter())
     return new DocPerFileStore(adapter)
   },
   Storeroom () {
-    let adapter = new storeroom.Converter(new vaultdb.MemoryAdapter())
+    let adapter = new storeroom.Converter(new escodb.MemoryAdapter())
     return storeroom.createStore({ adapter, password, hashBits: 2 })
   },
-  VaultDB () {
-    let adapter = new vaultdb.MemoryAdapter()
-    return vaultdb.createStore(adapter, {
+  EscoDB () {
+    let adapter = new escodb.MemoryAdapter()
+    return escodb.createStore(adapter, {
       key: { password, iterations: 2 ** 13 },
       shards: { n: 4 }
     })
