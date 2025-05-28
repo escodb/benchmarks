@@ -87,7 +87,9 @@ testStores({
   EscoDB () {
     let adapter = new escodb.MemoryAdapter()
     return escodb.createStore(adapter, {
-      key: { password, iterations: 2 ** 13 },
+      key: { password }
+    }, {
+      password: { iterations: 2 ** 13 },
       shards: { n: 4 }
     })
   }

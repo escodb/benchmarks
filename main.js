@@ -240,7 +240,9 @@ main([
     createAdapter: createEscoAdapter,
     async createStore (adapter) {
       let store = await escodb.createStore(adapter, {
-        key: { password, iterations: 2 ** 13 },
+        key: { password }
+      }, {
+        password: { iterations: 2 ** 13 },
         shards: { n: config.shards }
       })
       if (config.task) store = store.task()
