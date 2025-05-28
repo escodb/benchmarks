@@ -82,7 +82,6 @@ function createServer () {
 
 async function runTest (subject) {
   if (config.file) await fs.rm(STORE_PATH, { recursive: true }).catch(e => e)
-  if (config.couchdb) await escodb.CouchAdapter.cleanup()
 
   let server = null
   if (config.http) {
@@ -91,6 +90,8 @@ async function runTest (subject) {
   }
 
   let adapter = await subject.createAdapter()
+  if (adapter.cleanup) await adapter.cleanup()
+
   let counter = new Counter(adapter)
   let store = await subject.createStore(counter)
   let updates = []
@@ -157,6 +158,8 @@ async function main (subjects) {
 
 const STORE_PATH = resolve(__dirname, 'tmp')
 const password = 'hello'
+const HTTP_ADAPTER_URL = 'http://127.0.0.1:5000'
+const COUCHDB_URL = 'http://admin:admin@127.0.0.1:5984/escodb'
 
 function createStoreroomAdapter () {
   if (config.backend === 'escodb') {
@@ -164,9 +167,9 @@ function createStoreroomAdapter () {
   } else if (config.file) {
     return storeroom.createFileAdapter(STORE_PATH)
   } else if (config.http) {
-    return new storeroom.Converter(new escodb.HttpAdapter('http://127.0.0.1:5000'))
+    return new storeroom.Converter(new escodb.HttpAdapter(HTTP_ADAPTER_URL))
   } else if (config.couchdb) {
-    return new storeroom.Converter(new escodb.CouchAdapter())
+    return new storeroom.Converter(new escodb.CouchAdapter({ db: COUCHDB_URL }))
   } else {
     return new storeroom.Converter(new escodb.MemoryAdapter())
   }
@@ -178,9 +181,9 @@ function createEscoAdapter () {
   } else if (config.file) {
     return new escodb.FileAdapter(STORE_PATH, { fsync: config.fsync })
   } else if (config.http) {
-    return new escodb.HttpAdapter('http://127.0.0.1:5000')
+    return new escodb.HttpAdapter(HTTP_ADAPTER_URL)
   } else if (config.couchdb) {
-    return new escodb.CouchAdapter()
+    return new escodb.CouchAdapter({ db: COUCHDB_URL })
   } else {
     return new escodb.MemoryAdapter()
   }

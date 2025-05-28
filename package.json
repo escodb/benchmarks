@@ -1,7 +1,8 @@
 {
   "dependencies": {
     "storeroom": "git://github.com/jcoglan/storeroom.git#master",
-    "escodb": "git://github.com/escodb/core.git#main"
+    "@escodb/core": "github:escodb/core",
+    "@escodb/couchdb-adapter": "github:escodb/couchdb-adapter"
   },
   "devDependencies": {
     "mocha": "^10.7.3"
