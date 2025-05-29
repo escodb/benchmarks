@@ -147,13 +147,19 @@ async function benchmark (subject) {
                   '± ' + Math.round(err) + '%'
 
   console.log(rpad(subject.name, 16), rpad(printTime, 24), metrics[0])
+  return Math.round(mean)
 }
 
 async function main (subjects) {
+  let times = []
+
   for (let subject of subjects) {
     if ('only' in subject && !subject.only) continue
-    await benchmark(subject)
+    times.push(await benchmark(subject))
   }
+
+  console.log('\ndocs = ' + config.docs)
+  console.log(times.join(';') + '\n')
 }
 
 const STORE_PATH = resolve(__dirname, 'tmp')
