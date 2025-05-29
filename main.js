@@ -193,7 +193,7 @@ function createEscoAdapter () {
   if (config.backend === 'storeroom') {
     return new escodb.Converter(createStoreroomAdapter())
   } else if (config.file) {
-    return new escodb.FileAdapter(STORE_PATH, { fsync: config.fsync })
+    return new escodb.FileAdapter({ path: STORE_PATH, fsync: config.fsync })
   } else if (config.http) {
     return new escodb.HttpAdapter(HTTP_ADAPTER_URL)
   } else if (config.couchdb) {
