@@ -22,11 +22,14 @@ let { values: config } = parseArgs({
   options: {
     task:    { type: 'boolean', default: true },
     seq:     { type: 'boolean', default: false },
+
     backend: { type: 'string', default: '' },
     file:    { type: 'boolean', default: false },
     http:    { type: 'boolean', default: false },
     couchdb: { type: 'boolean', default: false },
     fsync:   { type: 'boolean', default: true },
+    latency: { type: 'string', default: '' },
+
     docs:    { type: 'string', default: '1000' },
     size:    { type: 'string', default: '0' },
     shards:  { type: 'string', default: '4' },
@@ -91,6 +94,11 @@ async function runTest (subject) {
 
   let adapter = await subject.createAdapter()
   if (adapter.cleanup) await adapter.cleanup()
+
+  if (config.latency) {
+    let [min, max] = config.latency.split(/ *, */).map((n) => parseInt(n, 10))
+    adapter = new escodb.Latency(adapter, min, max)
+  }
 
   let counter = new Counter(adapter)
   let store = await subject.createStore(counter)
